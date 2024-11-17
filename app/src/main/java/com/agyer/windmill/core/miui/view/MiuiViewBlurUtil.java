@@ -214,6 +214,8 @@ public class MiuiViewBlurUtil {
     }
 
     /**
+     * check is background blur supported
+     *
      * @apiNote from miuix.core.util.MiuiBlurUtils
      */
     public static boolean isBackgroundBlurSupported() {
@@ -243,7 +245,9 @@ public class MiuiViewBlurUtil {
     }
 
     /**
-     * UiContexts usually don't need to listen for blur changes because the system will restart them.
+     * to follow system settings, you should listen for changes to remove or add blur effect
+     * <p>
+     * disable "enhanced textures" in system settings will not auto remove blur effect
      */
     public static void addOnBackgroundBlurChangedListener(@NonNull Context context, @NonNull Handler handler, @NonNull OnBackgroundBlurChangedListener listener) {
         for (BackgroundBlurSettingsObserver observer : backgroundBlurListeners.keySet()) {
@@ -259,6 +263,9 @@ public class MiuiViewBlurUtil {
         addOnBackgroundBlurChangedListener(context, new Handler(context.getMainLooper()), listener);
     }
 
+    /**
+     * remove listener to avoid context leaks
+     */
     public static void removeOnBackgroundBlurChangedListener(@NonNull OnBackgroundBlurChangedListener listener) {
         for (BackgroundBlurSettingsObserver observer : backgroundBlurListeners.keySet()) {
             if (observer.listener.equals(listener)) {
@@ -271,8 +278,8 @@ public class MiuiViewBlurUtil {
     /**
      * @apiNote from miuix.core.util.MiuiBlurUtils
      */
-    public static boolean setBackgroundBlur(@NonNull View view, int i) {
-        return setBackgroundBlur(view, i, false);
+    public static boolean setBackgroundBlur(@NonNull View view, @IntRange(from = 0, to = 400) int radius) {
+        return setBackgroundBlur(view, radius, false);
     }
 
     /**
@@ -297,7 +304,7 @@ public class MiuiViewBlurUtil {
      * @see #setBackgroundBlurRadius(View, int)
      * @see #setBackgroundBlurMode(View, int)
      */
-    public static boolean setBackgroundBlur(@NonNull View view, int radius, @BlurMode int blurMode) {
+    public static boolean setBackgroundBlur(@NonNull View view, @IntRange(from = 0, to = 400) int radius, @BlurMode int blurMode) {
         Context viewContext = view.getContext();
 
         if (DEBUG) {
@@ -337,7 +344,7 @@ public class MiuiViewBlurUtil {
     }
 
     static boolean setBackgroundBlurEnhanceFlag(@NonNull View view, int flag, int mask) {
-        return call("setMiBackgroundBlurEnhanceFlag", view, new Class[]{int.class, int.class}, new Object[]{flag, mask});
+        return BACKGROUND_BLUR_SUPPORTED && call("setMiBackgroundBlurEnhanceFlag", view, new Class[]{int.class, int.class}, new Object[]{flag, mask});
     }
 
     public static boolean setBackgroundBlurRadius(@NonNull View view, @IntRange(from = 0, to = 400) int radius) {
@@ -345,11 +352,11 @@ public class MiuiViewBlurUtil {
     }
 
     static boolean setBackgroundBlurScaleRatio(@NonNull View view, float scaleRatio) {
-        return call("setMiBackgroundBlurScaleRatio", view, new Class[]{float.class}, new Object[]{scaleRatio});
+        return BACKGROUND_BLUR_SUPPORTED && call("setMiBackgroundBlurScaleRatio", view, new Class[]{float.class}, new Object[]{scaleRatio});
     }
 
     static boolean setBackgroundBlurEnhanceFlag(@NonNull View view, float flag) {
-        return call("setMiBackgroundBlurEnhanceFlag", view, new Class[]{float.class}, new Object[]{flag});
+        return BACKGROUND_BLUR_SUPPORTED && call("setMiBackgroundBlurEnhanceFlag", view, new Class[]{float.class}, new Object[]{flag});
     }
 
     private static void tryCall(@NonNull String methodName, @NonNull View view, @Nullable Class<?>[] paramTypes, @Nullable Object[] args) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
@@ -371,6 +378,8 @@ public class MiuiViewBlurUtil {
     }
 
     /**
+     * disable view blur
+     *
      * @apiNote from miuix.core.util.MiuiBlurUtils
      */
     public static boolean clearBackgroundBlur(@NonNull View view) {
